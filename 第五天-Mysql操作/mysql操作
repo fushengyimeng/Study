@@ -1,0 +1,6 @@
+1. 命令行连接mysql mysql -u root -p => 回车 => 输入密码 进入Mysql交互模式
+2. python连接mysql用pymysql模块 conn = pymysql.connect(host='ip',user='root',password='password',database='数据库名字')
+3. 执行sql还需要用conn创建出一个光标 cursor = conn.cursor()
+4. 执行sql sql = 'select * from name' cursor.execute(sql)
+5. 接收查询的结果 result = cursor.fetchall()
+

@@ -1,0 +1,12 @@
+1. windows上先安装git.exe
+2. 右键git bash
+3. 配置用户密码  git config --global user.name "Your Name"
+                git config --global user.email "email@example.com"
+4. 在github上新建一个空仓库 your repositories => New => 仓库名 => public/private
+5. 在git bash中 移动到本地某个路径下 执行 git clone 仓库的https地址 如https://github.com/fushengyimeng/again_project.git
+6. 在本地克隆下来的仓库中 编写代码
+7. 推送代码到github仓库 要在仓库的路径下  git add .
+                                        git commit -m update(update随便写)
+                                        git push origin master (master代表分支的意思)
+
+8. 拉取github代码到本地 git pull origin master(分支)

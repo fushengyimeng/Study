@@ -1,0 +1,14 @@
+1. 先用scrapy把所有逻辑写完 之后在改写成scrapy_redis
+
+2. 首先要有一个往redis放数据的脚本
+
+3. settings里面要连接redis 以及指定库 和 key
+
+4. spider文件中要把scrapy.Spider类 更换成RedisSpider
+
+5. name 下面要写 redis_key = 'key'
+
+6. 如何拿到redis中的数据 并构建请求？
+    重写make_request_from_data方法 获取redis中的数据 拼接url、data 之后return scrapy.FormRequest(call_back=self.parse)
+
+7. scrapy_redis从redis中获取数据默认的类型为List

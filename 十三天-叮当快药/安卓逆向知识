@@ -1,0 +1,63 @@
+0. 抓包
+    - 拿到一个app 确定好需求 首先要做的就是抓包 看该app是否能够抓到想要的接口
+    - 第一种方法 charles + 手机wifi配置charles http代理 来实现抓包 如要抓https的接口 还需要安装证书
+    - 第二种方法 httpcanary 依赖环境: 首先手机需要root 之后安装Httpcanary 根据提示Httpcanary将证书移动到系统根目录
+    - 第三种方法 charles + postern 抓包 依赖环境: 手机要root 安装charles的证书到手机 之后移动charles的证书到手机的系统根目录
+        之后配置charles的代理设置 用socks协议 开放端口 手机上的postern也配置代理设置 链接到charles上 之后打开vpn即可抓包
+
+    - 抓包拿到需要的接口 就要分析是否有加密参数 如果有就需要逆向app 还原加密参数
+1.查看app是否加固（加壳） 如果有 就需要脱壳
+    -拿到一个app先不急着反编译 先用查壳工具看下是否有壳
+2. 脱壳
+    - 用frida-dexdump 暴力脱壳 需要frida环境和frida-dexdump
+    - git clone firda-dexdump项目到本地
+    - 之后adb连接手机 开启frida-server 打开要脱壳的app 并点击几下确保该加载的文件已加载到内存中
+    - 最后运行python main.py即可
+    - 执行完成会生成一个以目标app包名为名称的文件夹 里面放着脱下来的dex文件 即是咱们需要的java代码
+3. 反编译apk文件
+    - 用到的工具是jadx 需要依赖jdk环境
+    - jadx作用就是用来反编译app 不仅可以反编译apk文件 还可以反编译脱壳拿到的dex文件等
+4. hook关键函数
+    - 在jadx反编译之后 通过目标接口中的加密参数名字来搜索 优先尝试.put('加密参数名字')的位置 之后在根据其他参数、接口url来判断加密参数的位置
+    - 确定好要Hook的位置 就可以在vscode中写Hook代码（objection直接快速调试） 之后用frida -U app包名 -l hook_py.js去执行 （前提手机上frida-server已经开启）
+    - 也可以用xposed（xposed一般用于持久化）
+5. 还原加密参数算法
+    - hook之后可以确定该位置是否为加密位置 且可以拿到传入的加密字符串和返回的加密参数值
+    - 之后如果用的标准算法 如md5 sha1 AES des RSA 就可以直接根据拿到的加密字符串去测试 看是否能够得到加密参数值
+    - 以md5为例 确定算法为Md5后 Hook拿到加密字符串和加密参数值 就把加密参数值放到Md5在线测试网站测试
+        - 如果加密出来的值 跟HOOK出来的加密参数值相同 则代表该加密参数是直接MD5即可
+        - 否则 则代表 有可能是MD5 + salt
+
+5.1 so层分析
+    - 如何判断是so层?
+        - 1. native关键字 且该函数没有函数体
+    - 如何判断该函数在哪个so文件中的？
+        - 看附近是否有System.loadLibrary("so文件名")
+    - 在哪里拿到这个so文件？
+        - 将.apk 后缀名变成.zip
+        - lib文件下 放着该app的so文件
+    - 如何分析so文件？
+        -  IDA7.0
+        -  用ida7.0打开目标so文件
+        -  等到加载完成导入jni.h
+        - IMPORT(导入函数库) EXPORT（导出函数库）重点关注导出函数库
+        - 打开export导出函数库 看是否有java层名字的函数 如果有该函数是静态注册 双击进去分析
+        - 最开始是流程图界面 按空格编程汇编语言界面 之后按F5转成C/C++伪代码
+        - 把该函数第一个参数 改成javaEnv 使可读性更好
+
+6. 电脑如何adb链接手机设备并且开启frida-server？
+    -1.直接用USB链接上手机 手机打开可调式即可
+    -2. 手机上安装WIFI ADB 之后开启  之后电脑通过adb connect ip:5555
+    -3. adb shell命令 进入手机命令行
+    -4. frida hook 需要保证python环境中的frida版本 跟要Push到手机内部的frida-server版本保持一致 不然无法使用
+    -5. 把下载好的frida-server push 到手机/data/local/tmp下
+
+
+7. objection 用法 （基于frida的一套集成框架）
+    - 首先要确保手机上frida-server开启
+    - 拿到目标app的包名
+    - 打开app
+    - 进入Objection交互界面 => objection -g 包名 explore
+    - hook java层的方法 => android hooking watch class_method java类.方法名 --dump-args(参数) --dump-backtrace --dump-returnvalue（返回值）
+
+
